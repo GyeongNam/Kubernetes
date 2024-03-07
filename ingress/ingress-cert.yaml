@@ -1,0 +1,45 @@
+# https 인증서 적용 철차
+# 1. cert-manager 생성
+# cert-manager 생성을 위한 cert-manager namespace 생성
+# 1-1 kubectl create namespace cert-manager
+# 1-2 Helm 설치
+# 1-3 cert-manager 를 설치하기 위한 Jetstack Helm repository 추가
+# 1-4 helm repository 업데이트
+# 명령어 : helm repo update
+# 1-5 cert-manager 차트 설치
+# 명령어 : helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.5.0 --create-namespace --set installCRDs=true
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # 인증서 서버 주소; 해당 서버의 리소스를 통해 인증서 발행
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # 인증서 만료 또는 갱신 필요 시 알람 email
+    email: whrudska97@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+---
+#3. ClusterIssuer를 사용하여 Certificate 리소스 생성 : certificate 리소스 생성 시에 인증서 발급
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nginx-gyeongnam-com-tls
+  namespace: default
+spec:
+  secretName: nginx-gyeongnam-com-tls
+  duration: 2160h # 90일
+  renewBefore: 360h # before 15days
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: server.gyeongnam97.shop
+  dnsNames:
+    - server.gyeongnam97.shop
+
